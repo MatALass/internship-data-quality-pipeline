@@ -4,6 +4,27 @@ Nettoyage, résolution et enrichissement d'un export brut de ~6 000 stages étud
 (identité, entreprise, adresse, programme) en un dataset final exploitable, avec traçabilité
 complète des corrections et un système de rapports qualité automatisés.
 
+## Résultats
+
+Sur le jeu de démonstration, en run hors ligne (sans appel au géocodeur) :
+
+![Avant / après le pipeline](docs/images/avant_apres.png)
+
+| Étape | Avant | Après |
+|---|---|---|
+| Pays | 2 210 lignes sans pays | 385 (1 825 déduits : 1 680 par code postal + ville, 141 par ville unique, 9 overrides et normalisations) |
+| Codes postaux | formats mélangés, placeholders | 5 468 / 6 018 validés par le format du pays (91 %) |
+| Identités | 405 lignes avec des variantes (accents, prénoms secondaires, divergences) | 390 mises au propre sans risque, 15 laissées à revoir à la main |
+| Entreprises | 4 856 libellés distincts | 4 430 après normalisation, 169 paires de doublons probables proposées à la validation |
+| Doublons exacts | 4 stages en double | signalés en URGENT, jamais supprimés en silence |
+
+Avec le géocodage réseau activé, la couverture pays et code postal est meilleure : seuls les
+cas que Nominatim ne résout pas restent ouverts.
+
+Le résumé envoyé au service stages, généré à chaque run :
+
+![Résumé qualité](docs/images/resume_qualite.png)
+
 ## Données : un jeu de démonstration fictif
 
 Le dépôt ne contient aucune vraie personne. Le pipeline tourne sur `data/demo/stages_demo_raw.csv`,
@@ -60,12 +81,12 @@ data/
   interim/                  Sorties intermédiaires entre étapes du pipeline
   processed/                Dataset final unique (stages_efrei_final.csv)
   reference/                Décisions de fusion entreprises (semi-manuel) ET
-                            identity_overrides.csv (source_identity, corrected_identity, reason) —
+                            identity_overrides.csv (source_identity, corrected_identity, reason) :
                             contient des noms réels d'étudiants, jamais versionné (voir RGPD ci-dessous)
   reports/                  Rapports qualité (métier, technique, registre d'anomalies)
 
 notebooks/                 Un notebook par étape ; chargement, appel de fonctions métier,
-                            audit lisible et export uniquement — aucune logique métier inline.
+                            audit lisible et export uniquement, aucune logique métier inline.
                             Les sorties de cellules ne sont jamais versionnées (voir RGPD).
 
 src/stages_cleaning/       Toute la logique métier, testée unitairement.
@@ -94,7 +115,7 @@ données, appeler la fonction, afficher un audit lisible et exporter.
 Les trois fichiers d'overrides (`identity`, `location`/`country`, `postal`) sont appliqués en
 mode strict par défaut : un `stage_id` (ou une identité) présent dans un fichier d'override mais
 absent du dataset courant fait lever une erreur explicite plutôt que d'être silencieusement
-ignoré — utile si l'export brut change et qu'un `stage_id` devient orphelin après un
+ignoré, utile si l'export brut change et qu'un `stage_id` devient orphelin après un
 rafraîchissement des données.
 
 ## Pipeline
@@ -112,14 +133,14 @@ rafraîchissement des données.
 
 | # | Rôle | Produit |
 |---|------|---------|
-| 00 | Profilage du brut, aucune correction | — |
+| 00 | Profilage du brut, aucune correction | aucune sortie |
 | 01 | Identité : `stage_id`, overrides manuels, parsing nom/prénom, re-segmentation email, canonisation sûre uniquement (les divergences réelles restent `needs_review`) | `stage_id`, `nom`, `prenom`, `identity_*` |
 | 02 | Pays : normalisation ISO-2, inférence graduée par niveau de preuve (`high`/`medium`/`low`), overrides ciblés par `stage_id` | `pays`, `country_resolution_*` |
 | 03 | Code postal : validation par pattern pays, inférence depuis des sources déjà validées, jamais depuis des placeholders | `code_postal`, `postal_code_final_status` |
 | 04 | Programme : cursus/année/majeure/campus, trois notions séparées (`is_swim_program`, `is_swim_stage`, `is_international_stage`) | `real_program`, `major_status`, `is_*` |
 | 05 | Entreprise : normalisation syntaxique, détection de doublons probables (TF-IDF), fusion **uniquement** sur décision `merge` validée manuellement, famille analytique | `entreprise_normalisee`, `entreprise_canonique`, `entreprise_famille` |
 | 06 | Rapport qualité métier + technique à partir du même registre d'anomalies | `data/reports/*.xlsx`, `quality_issues.csv` |
-| 99 | Invariants : cardinalité, unicité `stage_id`, ISO-2, statuts postaux, non-régression des colonnes, absence de livrables dupliqués | — (assertions) |
+| 99 | Invariants : cardinalité, unicité `stage_id`, ISO-2, statuts postaux, non-régression des colonnes, absence de livrables dupliqués | aucune (assertions seules) |
 
 Chaque étape ne modifie jamais les colonnes produites par les étapes précédentes, hors les
 colonnes qu'elle a explicitement le droit de réécrire (déclarées en positif) : `99_validation`
@@ -136,7 +157,7 @@ pip install -r requirements.txt
 
 ## Exécution
 
-**Option 1 — tout le pipeline d'un coup :**
+**Option 1 : tout le pipeline d'un coup**
 
 ```powershell
 python run_pipeline.py                         # export réel s'il est là, sinon démo
@@ -144,7 +165,7 @@ python run_pipeline.py --dataset demo --offline  # ce que lance la CI
 ```
 
 Exécute les 8 notebooks dans l'ordre, réécrit chaque `.ipynb` avec ses nouvelles sorties (sorties
-de cellules retirées avant écriture par défaut, voir RGPD ci-dessus — `--keep-outputs` pour les
+de cellules retirées avant écriture par défaut, voir RGPD ci-dessus ; `--keep-outputs` pour les
 conserver en débogage local), et s'arrête à la première erreur. Un nom de notebook inconnu dans
 `--only` fait échouer la commande explicitement plutôt que d'être ignoré silencieusement.
 Sous-ensemble possible :
@@ -154,13 +175,13 @@ python run_pipeline.py --only 01_identity_cleaning 02_country_cleaning
 python run_pipeline.py --keep-outputs   # debug local uniquement, ne jamais committer le résultat
 ```
 
-**Option 2 — notebook par notebook**, dans Jupyter, en respectant l'ordre ci-dessus.
+**Option 2 : notebook par notebook**, dans Jupyter, en respectant l'ordre ci-dessus.
 
 ### Étape manuelle : validation des fusions d'entreprises (notebook 05)
 
 Au premier passage, `05_normalisation_entreprises.ipynb` génère
 `data/reference/company_merge_decisions.csv` avec toutes les paires candidates et une colonne
-`decision` vide. **Tant que `decision` reste vide, aucune fusion n'est appliquée** —
+`decision` vide. **Tant que `decision` reste vide, aucune fusion n'est appliquée** :
 `entreprise_canonique` est simplement égal à `entreprise_normalisee`. Pour valider :
 
 1. Ouvrir `data/reference/company_merge_decisions.csv`.
@@ -173,7 +194,7 @@ Au premier passage, `05_normalisation_entreprises.ipynb` génère
 
 `RUN_NETWORK_GEOCODING = True` par défaut dans les notebooks 02 et 03. **C'est un choix
 délibéré, différent de la recommandation initiale de l'audit round 3** (qui proposait `False`
-par défaut pour prioriser la reproductibilité hors ligne — voir `AUDIT_FIXES.md`, point B-1).
+par défaut pour prioriser la reproductibilité hors ligne).
 En pratique, le géocodage Nominatim résout une part significative des pays et codes postaux que
 les recoupements internes au dataset ne peuvent pas déterminer (383 pays et plusieurs centaines
 de codes postaux sur l'export actuel) ; désactiver le réseau par défaut aurait dégradé la
@@ -182,18 +203,18 @@ que :
 
 - **le cache rend les runs suivants hors ligne** : une fois une localisation résolue, elle est
   écrite dans `data/interim/*_geocoding_cache.csv` (livré avec le projet) et n'est plus jamais
-  re-géocodée — seules les localisations réellement nouvelles déclenchent un appel réseau ;
+  re-géocodée, seules les localisations réellement nouvelles déclenchent un appel réseau ;
 - **une panne réseau n'empoisonne plus le cache** : avant ce correctif, toute exception (coupure
   réseau, proxy d'école, machine hors ligne) était silencieusement interprétée comme
   « introuvable » et écrite en cache de façon permanente, sans retenter. Ce n'est plus le cas
   (`geocode.py`, `swallow_exceptions=False` + capture explicite) : une panne interrompt
   proprement le géocodage, conserve les résultats déjà obtenus, et laisse les localisations
-  restantes en attente d'un prochain run — jamais de faux `not_found` définitif ;
+  restantes en attente d'un prochain run, jamais de faux `not_found` définitif ;
 - **le risque RGPD est documenté, pas éliminé** : chaque appel réseau envoie une adresse de stage
   à Nominatim/OpenStreetMap (service tiers). C'est un compromis assumé entre couverture des
   données et exposition réseau, pas une absence de risque. Si un run strictement hors ligne est
   nécessaire (environnement sans accès réseau, audit de reproductibilité, CI), repasser
-  `RUN_NETWORK_GEOCODING` à `False` dans le(s) notebook(s) concerné(s) — le pipeline continue de
+  `RUN_NETWORK_GEOCODING` à `False` dans le(s) notebook(s) concerné(s) : le pipeline continue de
   fonctionner normalement à partir des caches déjà constitués, avec une couverture pays/CP
   réduite aux données déjà en cache.
 
@@ -213,8 +234,8 @@ Produit `data/reports/rapport_qualite_metier.xlsx` (à transmettre au service st
 (registre normalisé) et `data/reports/resume_qualite.pdf` (une à deux pages : KPI + évolution
 depuis le dernier rapport, pensé pour être lu ou transféré par email sans logiciel spécifique).
 L'évolution est calculée automatiquement à partir des instantanés conservés dans
-`data/reports/history/` (non versionné, RGPD). Voir `REPORTING.md` pour le détail des règles et
-comment en ajouter une.
+`data/reports/history/` (non versionné, RGPD). Les règles sont dans
+`src/stages_cleaning/quality_reporting/rules.py` : une règle = une fonction + un niveau de priorité.
 
 ## Export prêt pour la rentrée
 
@@ -229,18 +250,18 @@ trop peu fiables pour être exposées telles quelles. Décision prise le 06/08/2
 d'exclusion, définis dans `src/stages_cleaning/analysis_export.py`, testés dans
 `tests/test_analysis_export.py` :
 
-| Motif | Lignes | Condition |
+| Motif | Lignes (démo) | Condition |
 |---|---|---|
 | `dossier_vide` | 2 | ni entreprise, ni ville, ni pays renseignés |
-| `identite_divergente` | 8 | identité étudiante ambiguë (`identity_variant_category == "divergence_reelle"`) |
+| `identite_divergente` | 15 | identité étudiante ambiguë (`identity_variant_category == "divergence_reelle"`) |
 | `entreprise_non_exploitable` | 19 | nom d'entreprise réduit à une forme juridique seule ou à un libellé générique |
 
 Le script produit deux fichiers dans `data/processed/` :
-- `stages_efrei_final_flagge.csv` : les 6018 lignes du final + colonnes `exclu_analyse` (bool) et
-  `motif_exclusion` (texte, motifs cumulés séparés par `|`) — pour qui veut voir *pourquoi* une
+- `stages_efrei_final_flagge.csv` : les 6 018 lignes du final + colonnes `exclu_analyse` (bool) et
+  `motif_exclusion` (texte, motifs cumulés séparés par `|`), pour qui veut voir *pourquoi* une
   ligne est écartée.
-- `stages_efrei_pret_rentree.csv` : uniquement les 5989 lignes non exclues, sans ces deux colonnes
-  — c'est ce fichier qui doit être consommé par un usage externe (front, chatbot).
+- `stages_efrei_pret_rentree.csv` : uniquement les 5 982 lignes non exclues (jeu de démo), sans ces deux colonnes
+  : c'est ce fichier qui doit être consommé par un usage externe (front, chatbot).
 
 Les autres signalements du rapport qualité (pays à confiance faible, formats de CP non couverts,
 CP non résolus, SWIM à vérifier) restent volontairement dans le dataset : jugés non bloquants
@@ -281,4 +302,5 @@ le pipeline complet sur le jeu de démo, hors ligne.
 
 ## Historique
 
-`AUDIT_FIXES.md` documente les corrections issues des audits successifs du projet.
+Le dépôt repart d'un historique neuf (novembre 2026) : l'ancien contenait l'export réel. Le
+travail antérieur (trois rounds d'audit du pipeline) est résumé dans les sections ci-dessus.

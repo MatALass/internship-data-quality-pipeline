@@ -30,6 +30,7 @@ def _styles() -> dict[str, ParagraphStyle]:
         "subtitle": ParagraphStyle("subtitle", parent=base["Normal"], fontSize=10, textColor=colors.HexColor("#444444")),
         "section": ParagraphStyle("section", parent=base["Heading2"], textColor=HEADER_COLOR, spaceBefore=14, spaceAfter=6),
         "body": ParagraphStyle("body", parent=base["Normal"], fontSize=9, leading=12),
+        "cell": ParagraphStyle("cell", parent=base["Normal"], fontSize=8, leading=10),
         "note": ParagraphStyle("note", parent=base["Normal"], fontSize=8, textColor=colors.HexColor("#666666"), leading=11),
         "kpi_label": ParagraphStyle("kpi_label", parent=base["Normal"], fontSize=9, textColor=colors.white, alignment=1),
         "kpi_value": ParagraphStyle("kpi_value", parent=base["Normal"], fontSize=18, alignment=1, leading=22),
@@ -38,7 +39,7 @@ def _styles() -> dict[str, ParagraphStyle]:
 
 def _title_block(styles: dict, generated_at: datetime) -> list:
     title_table = Table(
-        [[Paragraph("Résumé qualité — données de stages", styles["title"])]],
+        [[Paragraph("Résumé qualité des données de stages", styles["title"])]],
         colWidths=[17 * cm],
     )
     title_table.setStyle(TableStyle([
@@ -82,8 +83,8 @@ def _summary_table(styles: dict, summary: pd.DataFrame) -> Table:
     for _, row in summary.iterrows():
         rows.append([
             PRIORITY_LABELS.get(row["priority"], row["priority"]),
-            row["category"],
-            row["title"],
+            Paragraph(str(row["category"]), styles["cell"]),
+            Paragraph(str(row["title"]), styles["cell"]),  # retour à la ligne, pas de débordement
             str(int(row["cases_detected"])),
             str(int(row["rows_affected"])),
         ])
@@ -96,7 +97,8 @@ def _summary_table(styles: dict, summary: pd.DataFrame) -> Table:
         ("FONTSIZE", (0, 0), (-1, -1), 8),
         ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ROWBACKGROUNDS" if False else "BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("ALIGN", (3, 1), (-1, -1), "RIGHT"),
     ]
     for i, priority in enumerate(row_priorities):
         if i == 0 or priority not in PRIORITY_COLORS:
@@ -139,7 +141,7 @@ def _evolution_block(styles: dict, comparison: dict[str, pd.DataFrame], has_hist
     story.append(Spacer(1, 6))
     story.append(Paragraph(
         f"{n_persisting} cas signalés lors du rapport précédent restent ouverts. "
-        "Un « cas résolu » signifie que la donnée a changé (corrigée en amont ou complétée) — "
+        "Un « cas résolu » signifie que la donnée a changé (corrigée en amont ou complétée) : "
         "cela ne garantit pas que la correction est juste, seulement que le signalement a disparu.",
         styles["note"],
     ))
@@ -170,7 +172,7 @@ def export_pdf_summary(
     doc = SimpleDocTemplate(
         str(path), pagesize=A4,
         leftMargin=1.5 * cm, rightMargin=1.5 * cm, topMargin=1.5 * cm, bottomMargin=1.5 * cm,
-        title="Résumé qualité — données de stages",
+        title="Résumé qualité des données de stages",
     )
     story: list = []
     story += _title_block(styles, generated_at)
