@@ -260,8 +260,8 @@ Le script produit deux fichiers dans `data/processed/` :
 - `stages_efrei_final_flagge.csv` : les 6 018 lignes du final + colonnes `exclu_analyse` (bool) et
   `motif_exclusion` (texte, motifs cumulés séparés par `|`), pour qui veut voir *pourquoi* une
   ligne est écartée.
-- `stages_efrei_pret_rentree.csv` : uniquement les 5 982 lignes non exclues (jeu de démo), sans ces deux colonnes
-  : c'est ce fichier qui doit être consommé par un usage externe (front, chatbot).
+- `stages_efrei_pret_rentree.csv` : uniquement les 5 982 lignes non exclues (jeu de démo), sans
+  ces deux colonnes. C'est ce fichier qui doit être consommé par un usage externe (front, chatbot).
 
 Les autres signalements du rapport qualité (pays à confiance faible, formats de CP non couverts,
 CP non résolus, SWIM à vérifier) restent volontairement dans le dataset : jugés non bloquants
