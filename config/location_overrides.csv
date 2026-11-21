@@ -1,0 +1,12 @@
+﻿stage_id,corrected_city,corrected_country,reason
+stg_902cff42b86c30f04db1,Barcelona,,normalisation du nom de ville
+stg_6d01a05e2ec0cc817b73,Barcelona,,normalisation du nom de ville
+stg_b513900bfd9baa50371f,Palaiseau,,correction orthographique
+stg_d37f69930b2fd087215f,Barcelona,,normalisation du nom de ville
+stg_0c1756711875753ef28b,,RS,Belgrade est en Serbie; code CS obsolète/ambigu
+stg_a5543828453511a1c309,Barcelona,,normalisation du nom de ville
+stg_b1b0b3a89063e30a9ffd,,CN,"adresse explicite Shenzhen, China"
+stg_5318bdd340a43d995ce0,Riga,,la colonne ville contenait le pays
+stg_37b23334dc4f4e588902,,GR,coordonnées GPS de l'adresse (35.27 25.34) vérifiées : Crète (Grèce)
+stg_77d0eb1f22180556cfe2,,GR,coordonnées GPS de l'adresse (35.27 25.34) vérifiées : Crète (Grèce)
+stg_ba62fee6b5758176b690,,FR,adresse (rues à Boulogne-Billancourt et Sèvres) et ville cohérentes avec la France

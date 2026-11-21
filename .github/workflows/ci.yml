@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests et pipeline complet sur le jeu de démo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+      - name: Pipeline complet (démo, sans réseau)
+        run: python run_pipeline.py --dataset demo --offline
+      - name: Aucune donnée générée n'est suivie par git
+        run: test -z "$(git status --porcelain -- data)"

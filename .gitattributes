@@ -1,0 +1,2 @@
+notebooks/*.ipynb filter=nbstripout
+notebooks/*.ipynb diff=ipynb

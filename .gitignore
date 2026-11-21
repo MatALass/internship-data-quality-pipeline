@@ -1,0 +1,60 @@
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.Python
+build/
+dist/
+
+# ============================================================
+# Environnements virtuels
+# ============================================================
+.venv/
+venv/
+env/
+
+# ============================================================
+# Jupyter
+# ============================================================
+.ipynb_checkpoints/
+Untitled*.ipynb
+
+# ============================================================
+# Tests / outils
+# ============================================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# ============================================================
+# Éditeurs / OS
+# ============================================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Données (RGPD) : rien n'est versionné sauf le jeu de démonstration fictif
+# ============================================================
+# Export réel, sorties intermédiaires, final, rapports et historique : nominatifs ou dérivés
+# de l'export réel. Le pipeline les régénère ; le jeu public est data/demo/.
+data/raw/*
+data/interim/*
+data/processed/*
+data/reports/*
+!data/*/.gitkeep
+!data/demo/
+# Power BI : un .pbix embarque les données qu'il a chargées
+powerbi/*.pbix
+
+# Décisions de fusion entreprises : pas de données personnelles, mais dérivées
+# du dataset nominatif et propres à cette extraction — pas versionnées par défaut.
+data/reference/*
+!data/reference/.gitkeep

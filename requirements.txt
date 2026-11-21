@@ -1,0 +1,34 @@
+# Cœur du pipeline
+pandas>=2.0
+numpy>=1.26
+geopy>=2.4
+certifi
+pycountry>=24.6
+XlsxWriter>=3.2
+
+# Normalisation entreprises (notebook 05 / src/stages_cleaning/company.py)
+scikit-learn>=1.4
+
+# Résumé PDF automatique (notebook 06 / src/stages_cleaning/quality_reporting/pdf_summary.py)
+reportlab>=4.0
+
+# Divers
+tqdm>=4.66
+
+# Notebooks et exécution du pipeline (jupyter, run_pipeline.py)
+jupyter>=1.0
+ipykernel>=6.29
+nbformat>=5.10
+nbclient>=0.10
+
+# RGPD — garde-fou contre les sorties nominatives versionnées (AUDIT_FIXES.md R-1) :
+# `nbstripout --install --attributes .gitattributes` couvre aussi les exécutions manuelles
+# dans Jupyter, en plus du strip fait par run_pipeline.py.
+nbstripout>=0.7
+
+# Tests
+pytest>=8.0
+pypdf>=5.0
+
+# Jeu de démonstration (src/stages_cleaning/synthetic.py) : listes de prénoms et noms fictifs
+Faker==40.63.0  # version figée : les listes de noms font partie du jeu de démo
